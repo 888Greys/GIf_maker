@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Magical GIF Maker</title>
+  <link rel="stylesheet" href="index.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai@^0.7.0",
+        "gifenc": "https://cdn.jsdelivr.net/npm/gifenc@^1.0.3/+esm"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <h1>Magical GIF Maker</h1>
+      <p>Turn your ideas into fun animated doodles</p>
+    </header>
+
+    <div class="input-container">
+      <div class="input-field">
+        <i class="fas fa-wand-magic-sparkles input-icon"></i>
+        <input
+          type="text"
+          id="prompt-input"
+          value="a shiba inu eating ice-cream"
+          placeholder="Describe your animation..."
+        />
+      </div>
+
+      <div class="prompt-suggestions">
+        <div class="suggestions-header">
+          <label class="suggestions-label">💡 Need inspiration?</label>
+          <button id="surprise-btn" class="surprise-button">
+            <i class="fas fa-dice"></i>
+            Surprise Me!
+          </button>
+        </div>
+        <div class="suggestion-chips" id="suggestion-chips">
+          <!-- Suggestion chips will be populated here -->
+        </div>
+      </div>
+
+      <div class="recent-prompts" id="recent-prompts-section" style="display: none;">
+        <div class="recent-header">
+          <label class="recent-label">📝 Recent Prompts</label>
+          <button id="clear-history-btn" class="clear-history-button">
+            <i class="fas fa-trash-alt"></i>
+            Clear
+          </button>
+        </div>
+        <div class="recent-chips" id="recent-chips">
+          <!-- Recent prompt chips will be populated here -->
+        </div>
+      </div>
+      
+      <div class="style-presets">
+        <label class="style-label">🎨 Art Style:</label>
+        <div class="preset-buttons">
+          <button class="preset-btn active" data-style="doodle">
+            <i class="fas fa-pencil-alt"></i>
+            Doodle
+          </button>
+          <button class="preset-btn" data-style="watercolor">
+            <i class="fas fa-paint-brush"></i>
+            Watercolor
+          </button>
+          <button class="preset-btn" data-style="sketch">
+            <i class="fas fa-pen-nib"></i>
+            Sketch
+          </button>
+          <button class="preset-btn" data-style="pixel">
+            <i class="fas fa-th"></i>
+            Pixel Art
+          </button>
+          <button class="preset-btn" data-style="cartoon">
+            <i class="fas fa-smile"></i>
+            Cartoon
+          </button>
+          <button class="preset-btn" data-style="minimalist">
+            <i class="fas fa-circle"></i>
+            Minimal
+          </button>
+        </div>
+      </div>
+
+      <div class="speed-control">
+        <label class="speed-label">⚡ Animation Speed:</label>
+        <div class="speed-buttons">
+          <button class="speed-btn" data-speed="slow">
+            <i class="fas fa-turtle"></i>
+            Slow
+          </button>
+          <button class="speed-btn active" data-speed="normal">
+            <i class="fas fa-play"></i>
+            Normal
+          </button>
+          <button class="speed-btn" data-speed="fast">
+            <i class="fas fa-rabbit-fast"></i>
+            Fast
+          </button>
+        </div>
+      </div>
+
+      <div class="frame-control">
+        <label class="frame-label">🎬 Frame Count:</label>
+        <div class="frame-buttons">
+          <button class="frame-btn" data-frames="5">
+            <i class="fas fa-images"></i>
+            5 Frames
+          </button>
+          <button class="frame-btn active" data-frames="10">
+            <i class="fas fa-film"></i>
+            10 Frames
+          </button>
+          <button class="frame-btn" data-frames="15">
+            <i class="fas fa-video"></i>
+            15 Frames
+          </button>
+        </div>
+      </div>
+
+      <div class="color-control">
+        <label class="color-label">🌈 Color Theme:</label>
+        <div class="color-buttons">
+          <button class="color-btn" data-color="pastel">
+            <i class="fas fa-cloud"></i>
+            Pastel
+          </button>
+          <button class="color-btn active" data-color="vibrant">
+            <i class="fas fa-sun"></i>
+            Vibrant
+          </button>
+          <button class="color-btn" data-color="monochrome">
+            <i class="fas fa-moon"></i>
+            Mono
+          </button>
+          <button class="color-btn" data-color="neon">
+            <i class="fas fa-bolt"></i>
+            Neon
+          </button>
+        </div>
+      </div>
+
+      <div class="size-control">
+        <label class="size-label">📐 Output Size:</label>
+        <div class="size-buttons">
+          <button class="size-btn" data-size="512">
+            <i class="fas fa-compress-alt"></i>
+            Small
+            <span class="size-detail">512px</span>
+          </button>
+          <button class="size-btn active" data-size="1024">
+            <i class="fas fa-expand-arrows-alt"></i>
+            Medium
+            <span class="size-detail">1024px</span>
+          </button>
+          <button class="size-btn" data-size="2048">
+            <i class="fas fa-expand"></i>
+            Large
+            <span class="size-detail">2048px</span>
+          </button>
+        </div>
+      </div>
+
+      <button id="generate-button" class="generate-button">
+        <span>Generate Magic</span>
+        <i class="fas fa-sparkles"></i>
+      </button>
+    </div>
+
+    <div class="generation-container">
+      <div class="progress-section" id="progress-section" style="display: none;">
+        <div class="progress-header">
+          <div class="progress-info">
+            <span class="progress-title" id="progress-title">Generating Animation...</span>
+            <span class="progress-details" id="progress-details">Preparing frames</span>
+          </div>
+          <div class="progress-stats">
+            <span class="progress-frame-count" id="progress-frame-count">0/10</span>
+            <span class="progress-time" id="progress-time">0s</span>
+          </div>
+        </div>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+            <div class="progress-glow" id="progress-glow"></div>
+          </div>
+          <div class="progress-percentage" id="progress-percentage">0%</div>
+        </div>
+        <div class="progress-stages">
+          <div class="stage" id="stage-prompt">
+            <div class="stage-icon">💭</div>
+            <span>Processing Prompt</span>
+          </div>
+          <div class="stage" id="stage-frames">
+            <div class="stage-icon">🎨</div>
+            <span>Generating Frames</span>
+          </div>
+          <div class="stage" id="stage-gif">
+            <div class="stage-icon">🎬</div>
+            <span>Creating GIF</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab-button active" data-tab="frames">Frames</button>
+        <button class="tab-button" data-tab="output">Output</button>
+      </div>
+
+      <div class="tab-content active" id="frames-content">
+        <div class="preview-section" id="preview-section" style="display: none;">
+          <div class="preview-header">
+            <h3 class="preview-title">🎬 Live Preview</h3>
+            <div class="preview-controls">
+              <button id="preview-play-btn" class="preview-control-btn">
+                <i class="fas fa-play"></i>
+              </button>
+              <button id="preview-pause-btn" class="preview-control-btn" style="display: none;">
+                <i class="fas fa-pause"></i>
+              </button>
+              <span class="preview-info" id="preview-info">Ready to preview</span>
+            </div>
+          </div>
+          <div class="preview-container">
+            <canvas id="preview-canvas" class="preview-canvas"></canvas>
+            <div class="preview-overlay" id="preview-overlay">
+              <div class="preview-message">
+                <i class="fas fa-film"></i>
+                <span>Preview will appear as frames are generated</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="frames-container" id="frames-container">
+          <!-- Frames will appear here -->
+        </div>
+      </div>
+
+      <div class="tab-content" id="output-content">
+        <div class="result-container" id="result-container">
+          <!-- Final GIF will appear here -->
+        </div>
+        
+        <div class="share-section" id="share-section" style="display: none;">
+          <div class="share-header">
+            <h3 class="share-title">📱 Share Your Creation</h3>
+            <p class="share-subtitle">Show off your magical animation to the world!</p>
+          </div>
+          
+          <div class="share-buttons">
+            <button id="share-x" class="share-btn x">
+              <i class="fab fa-x-twitter"></i>
+              <span>X</span>
+            </button>
+            
+            <button id="share-facebook" class="share-btn facebook">
+              <i class="fab fa-facebook-f"></i>
+              <span>Facebook</span>
+            </button>
+            
+            <button id="share-reddit" class="share-btn reddit">
+              <i class="fab fa-reddit-alien"></i>
+              <span>Reddit</span>
+            </button>
+            
+            <button id="share-discord" class="share-btn discord">
+              <i class="fab fa-discord"></i>
+              <span>Discord</span>
+            </button>
+            
+            <button id="copy-link" class="share-btn copy">
+              <i class="fas fa-link"></i>
+              <span>Copy Link</span>
+            </button>
+            
+            <button id="download-gif" class="share-btn download">
+              <i class="fas fa-download"></i>
+              <span>Download</span>
+            </button>
+          </div>
+          
+          <div class="share-stats" id="share-stats">
+            <div class="stat-item">
+              <span class="stat-label">Style:</span>
+              <span class="stat-value" id="stat-style">Doodle</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Frames:</span>
+              <span class="stat-value" id="stat-frames">10</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Speed:</span>
+              <span class="stat-value" id="stat-speed">Normal</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Size:</span>
+              <span class="stat-value" id="stat-size">1024px</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-container">
+      <div class="status-display" id="status-display"></div>
+    </div>
+  </div>
+
+  <script type="module" src="index.js"></script>
+</body>
+</html>

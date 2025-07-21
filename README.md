@@ -308,7 +308,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 🔗 Links
 
-- [Live Demo](https://your-demo-url.com)
+- [Live Demo](https://callous-veil.surge.sh/)
 - [API Documentation](https://ai.google.dev/docs)
 - [Report Issues](https://github.com/yourusername/magical-gif-maker/issues)
 - [Feature Requests](https://github.com/yourusername/magical-gif-maker/discussions)
